@@ -1,7 +1,7 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import { filterImageFromURL, deleteLocalFiles } from './util/util';
-
+import { Request, Response } from "express";
 (async () => {
 
   // Init the Express application
@@ -14,18 +14,18 @@ import { filterImageFromURL, deleteLocalFiles } from './util/util';
   app.use(bodyParser.json());
 
   app.get("/filteredimage",
-    async (req, res) => {
-      const regex = /(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g;
-      const { image_url } = req.query;
+    async (req: Request, res: Response) => {
+      const regex: RegExp = /(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g;
+      const image_url: string = req.query.image_url;
       if (image_url) {
-        const result = image_url.toString().match(regex);
+        const result: RegExpMatchArray = image_url.toString().match(regex);
         if (!result) {
           res.send("the image url is not valid ")
         }
         else {
-          const imageFilter = await filterImageFromURL(image_url);
+          const imageFilter: string = await filterImageFromURL(image_url);
           if (imageFilter) {
-            return res.status(200).sendFile(imageFilter.toString(), err => {
+            return res.status(200).sendFile(imageFilter.toString(), (err: Error) => {
               if (err) {
                 res.status(500).send("Somethings went wrong");
               }
@@ -44,7 +44,7 @@ import { filterImageFromURL, deleteLocalFiles } from './util/util';
 
   // Root Endpoint
   // Displays a simple message to the user
-  app.get("/", async (req, res) => {
+  app.get("/", async (req: Request, res: Response) => {
     res.send("try GET /filteredimage?image_url={{}}")
   });
 
