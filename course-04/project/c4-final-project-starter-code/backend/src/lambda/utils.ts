@@ -1,4 +1,4 @@
-import { APIGatewayProxyEvent } from "aws-lambda";
+import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { parseUserId } from "../auth/utils";
 
 /**
@@ -13,4 +13,27 @@ export function getUserId(event: APIGatewayProxyEvent): string {
   const jwtToken = split[1]
 
   return parseUserId(jwtToken)
+}
+
+export class APIGatewayResult implements APIGatewayProxyResult {
+  statusCode: number;
+  headers?: { [header: string]: string | number | boolean; };
+  multiValueHeaders?: { [header: string]: (string | number | boolean)[]; };
+  body: string;
+  isBase64Encoded?: boolean;
+
+  constructor(dataBody: any) {
+    this.statusCode = 200;
+    this.headers = {
+      "Access-Control-Allow-Origin": "*"
+    };
+    this.body = dataBody;
+  }
+}
+
+export function getHeaderToken(event: APIGatewayProxyEvent) {
+  const authorization = event.headers.Authorization
+  const split = authorization.split(' ')
+  const jwtToken = split[1];
+  return jwtToken;
 }
