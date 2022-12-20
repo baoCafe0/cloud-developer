@@ -38,6 +38,29 @@ export class ToDoDTO {
         return items as TodoItem[];
     }
 
+    async searchByKeyword(userId: string, keyword: string): Promise<TodoItem[]> {
+        logger.info(`Get all todo list with USERID: ${userId}`)
+
+        const params = {
+            TableName: this.todoTable,
+            KeyConditionExpression: "#userId = :userId",
+            FilterExpression: "begins_with(#name, :keyword)",
+            ExpressionAttributeNames: {
+                "#userId": "userId",
+                "#name": "name"
+            },
+            ExpressionAttributeValues: {
+                ":userId": userId,
+                ":keyword": keyword
+            }
+        };
+
+        const result = await this.client.query(params).promise();
+        const items = result.Items;
+
+        return items as TodoItem[];
+    }
+
     async createToDo(todoItem: TodoItem): Promise<TodoItem> {
         const params = {
             TableName: this.todoTable,
