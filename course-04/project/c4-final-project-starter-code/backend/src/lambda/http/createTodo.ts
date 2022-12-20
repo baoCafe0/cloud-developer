@@ -13,7 +13,7 @@ export const handler = middy(
     const todos = await createToDo(newTodo, jwtToken);
 
     const body = JSON.stringify({
-      "items": todos,
+      "item": todos,
     });
 
     return new APIGatewayResult(body);
