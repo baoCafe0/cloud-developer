@@ -17,7 +17,10 @@ import {
 import { createTodo, deleteTodo, getTodos, patchTodo } from '../api/todos-api'
 import Auth from '../auth/Auth'
 import { Todo } from '../types/Todo'
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
+const notify = (msg: string) => toast(msg);
 interface TodosProps {
   auth: Auth
   history: History
@@ -44,6 +47,11 @@ export class Todos extends React.PureComponent<TodosProps, TodosState> {
     this.props.history.push(`/todos/${todoId}/edit`)
   }
 
+  sortTodoList(todos: any[]){
+    const result = todos.sort((x, y) => y.createdAt - x.createdAt)
+    return result;
+  }
+
   onTodoCreate = async (event: React.ChangeEvent<HTMLButtonElement>) => {
     try {
       const dueDate = this.calculateDueDate()
@@ -51,8 +59,10 @@ export class Todos extends React.PureComponent<TodosProps, TodosState> {
         name: this.state.newTodoName,
         dueDate
       })
+      notify("Create ToDo successfully!")
+      const result = this.sortTodoList([...this.state.todos, newTodo])
       this.setState({
-        todos: [...this.state.todos, newTodo],
+        todos: [...result],
         newTodoName: ''
       })
     } catch {
@@ -63,6 +73,7 @@ export class Todos extends React.PureComponent<TodosProps, TodosState> {
   onTodoDelete = async (todoId: string) => {
     try {
       await deleteTodo(this.props.auth.getIdToken(), todoId)
+      notify("Delete ToDo successfully!")
       this.setState({
         todos: this.state.todos.filter(todo => todo.todoId !== todoId)
       })
@@ -79,6 +90,7 @@ export class Todos extends React.PureComponent<TodosProps, TodosState> {
         dueDate: todo.dueDate,
         done: !todo.done
       })
+      notify(`${todo.name} checked successfully`)
       this.setState({
         todos: update(this.state.todos, {
           [pos]: { done: { $set: !todo.done } }
@@ -92,8 +104,9 @@ export class Todos extends React.PureComponent<TodosProps, TodosState> {
   async componentDidMount() {
     try {
       const todos = await getTodos(this.props.auth.getIdToken())
+      const result = this.sortTodoList(todos)
       this.setState({
-        todos,
+        todos: [...result],
         loadingTodos: false
       })
     } catch (e) {
@@ -201,6 +214,7 @@ export class Todos extends React.PureComponent<TodosProps, TodosState> {
             </Grid.Row>
           )
         })}
+        <ToastContainer />
       </Grid>
     )
   }
