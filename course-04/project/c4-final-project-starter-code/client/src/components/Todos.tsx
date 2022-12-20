@@ -14,7 +14,7 @@ import {
   Loader
 } from 'semantic-ui-react'
 
-import { createTodo, deleteTodo, getTodos, patchTodo } from '../api/todos-api'
+import { createTodo, deleteTodo, getTodos, patchTodo, searchTodos } from '../api/todos-api'
 import Auth from '../auth/Auth'
 import { Todo } from '../types/Todo'
 import { ToastContainer, toast } from 'react-toastify';
@@ -30,24 +30,30 @@ interface TodosState {
   todos: Todo[]
   newTodoName: string
   loadingTodos: boolean
+  keyword: string
 }
 
 export class Todos extends React.PureComponent<TodosProps, TodosState> {
   state: TodosState = {
     todos: [],
     newTodoName: '',
-    loadingTodos: true
+    loadingTodos: true,
+    keyword: ''
   }
 
   handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     this.setState({ newTodoName: event.target.value })
   }
 
+  handleChangeKeyword = (event: React.ChangeEvent<HTMLInputElement>) => {
+    this.setState({ keyword: event.target.value })
+  }
+
   onEditButtonClick = (todoId: string) => {
     this.props.history.push(`/todos/${todoId}/edit`)
   }
 
-  sortTodoList(todos: any[]){
+  sortTodoList(todos: any[]) {
     const result = todos.sort((x, y) => y.createdAt - x.createdAt)
     return result;
   }
@@ -100,6 +106,26 @@ export class Todos extends React.PureComponent<TodosProps, TodosState> {
       alert('Todo deletion failed')
     }
   }
+  searchTodos = async (event: React.ChangeEvent<HTMLButtonElement>) => {
+    try {
+      if (!this.state.keyword) {
+        await this.componentDidMount();
+        return;
+      }
+      const todos = await searchTodos(this.props.auth.getIdToken(), this.state.keyword)
+      const result = this.sortTodoList(todos)
+
+      this.setState({
+        todos: [...result],
+      })
+      if (result.length == 0) {
+        notify("No results found.Try changing the filter or search terms. ")
+      }
+    } catch (e) {
+      alert(`Todo search failed: ${e}`)
+    }
+
+  }
 
   async componentDidMount() {
     try {
@@ -120,9 +146,35 @@ export class Todos extends React.PureComponent<TodosProps, TodosState> {
         <Header as="h1">TODOs</Header>
 
         {this.renderCreateTodoInput()}
+        {this.renderSearchInput()}
 
         {this.renderTodos()}
       </div>
+    )
+  }
+
+  renderSearchInput() {
+    return (
+      <Grid.Row>
+        <Grid.Column width={16}>
+          <Input
+            action={{
+              color: 'teal',
+              labelPosition: 'left',
+              icon: 'search',
+              content: 'Search task',
+              onClick: this.searchTodos
+            }}
+            fluid
+            actionPosition="left"
+            placeholder="Search task name..."
+            onChange={this.handleChangeKeyword}
+          />
+        </Grid.Column>
+        <Grid.Column width={16}>
+          <Divider />
+        </Grid.Column>
+      </Grid.Row>
     )
   }
 
@@ -159,11 +211,11 @@ export class Todos extends React.PureComponent<TodosProps, TodosState> {
     return this.renderTodosList()
   }
 
-  renderLoading() {
+  renderLoading(msg = 'Loading TODOs') {
     return (
       <Grid.Row>
         <Loader indeterminate active inline="centered">
-          Loading TODOs
+          {msg}
         </Loader>
       </Grid.Row>
     )
@@ -206,7 +258,7 @@ export class Todos extends React.PureComponent<TodosProps, TodosState> {
                 </Button>
               </Grid.Column>
               {todo.attachmentUrl && (
-                <Image src={todo.attachmentUrl} size="small" wrapped onError={(event: any) => event.target.style.display = 'none'}/>
+                <Image src={todo.attachmentUrl} size="small" wrapped onError={(event: any) => event.target.style.display = 'none'} />
               )}
               <Grid.Column width={16}>
                 <Divider />
